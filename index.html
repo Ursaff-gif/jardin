@@ -1,156 +1,122 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-  <meta charset="UTF-8" />
-  <title>Simulateur de jardin</title>
+  <meta charset="UTF-8">
+  <title>Simulateur de Jardin</title>
   <style>
     body {
-      font-family: 'Open Sans', sans-serif;
-      background-color: #ffffff;
+      font-family: Arial, sans-serif;
+      background-color: #f0f0f0;
       margin: 0;
-      padding: 10px;
+      padding: 20px;
     }
-
     .toolbar {
       margin-bottom: 10px;
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
     }
-
-    .toolbar button, .upload-label, .save-btn {
-      background-color: #95de8f;
-      color: #3f2c32;
-      font-weight: bold;
-      border: none;
-      padding: 6px 10px;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 12px;
+    .toolbar button {
+      margin-right: 5px;
     }
-
-    .upload-label {
-      margin-right: auto;
-    }
-
-    #imageUpload {
-      display: none;
-    }
-
-    .simulator-container {
+    #garden {
       width: 100%;
-      height: 540px;
-      border: 2px solid #7e9884;
-      background-color: #dfebd7;
+      height: 600px;
+      border: 1px solid #ccc;
       position: relative;
-      overflow: hidden;
+      background-size: cover;
+      background-position: center;
     }
-
-    #background {
-      position: absolute;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      z-index: 0;
-    }
-
     .plant {
-      width: 70px;
       position: absolute;
-      cursor: grab;
-      z-index: 2;
+      cursor: move;
+      width: 100px; /* Taille par défaut des plantes */
     }
-
-    .plant:hover::after {
-      content: "🛒";
-      position: absolute;
-      bottom: -20px;
-      left: 0;
-      background: #fff;
-      border-radius: 4px;
-      font-size: 12px;
-      padding: 2px 5px;
-    }
-
-    .message {
-      font-size: 14px;
-      color: #3f2c32;
-      margin-top: 5px;
+    #backgroundInput {
+      display: none;
     }
   </style>
 </head>
 <body>
-  <div class="toolbar">
-    <label class="upload-label" for="imageUpload">📷 Importer mon jardin</label>
-    <input type="file" id="imageUpload" accept="image/*">
 
-    <button onclick="addPlant('https://www.freeiconspng.com/uploads/plant-png-22.png')">🌿 Plante</button>
-    <button onclick="addPlant('https://www.freeiconspng.com/uploads/plant-png-5.png')">🌼 Fleur</button>
-    <button onclick="addPlant('https://www.freeiconspng.com/uploads/olive-tree-png-31.png')">🌳 Arbre</button>
+<div class="toolbar">
+  <label for="backgroundInput">Importer une image de fond</label>
+  <input type="file" id="backgroundInput" accept="image/*">
+  <button onclick="saveGarden()">Sauvegarder la composition</button>
+</div>
 
-    <button class="save-btn" onclick="saveAsImage()">📸 Sauvegarder</button>
-  </div>
+<div id="plantPalette">
+  <!-- Les images des plantes seront ajoutées ici -->
+</div>
 
-  <div class="simulator-container" id="simulator">
-    <img id="background" src="" alt="Votre jardin ici" />
-  </div>
+<div id="garden" ondrop="drop(event)" ondragover="allowDrop(event)">
+  <!-- Zone où les plantes seront placées -->
+</div>
 
-  <div class="message" id="message"></div>
+<script>
+  const plantImages = [
+    'https://www.freeiconspng.com/uploads/plant-png-22.png',
+    'https://www.freeiconspng.com/uploads/plant-png-5.png',
+    'https://www.freeiconspng.com/uploads/plant-png-12.png',
+    'https://www.freeiconspng.com/uploads/plant-png-15.png',
+    'https://www.freeiconspng.com/uploads/plant-png-17.png',
+    'https://www.freeiconspng.com/uploads/plant-png-19.png',
+    'https://www.freeiconspng.com/uploads/plant-png-24.png',
+    'https://www.freeiconspng.com/uploads/plant-png-26.png',
+    'https://www.freeiconspng.com/uploads/plant-png-28.png',
+    'https://www.freeiconspng.com/uploads/plant-png-30.png',
+    'https://www.freeiconspng.com/uploads/plant-png-32.png',
+    'https://www.freeiconspng.com/uploads/plant-png-34.png',
+    'https://www.freeiconspng.com/uploads/plant-png-36.png',
+    'https://www.freeiconspng.com/uploads/plant-png-38.png',
+    'https://www.freeiconspng.com/uploads/plant-png-40.png',
+    'https://www.freeiconspng.com/uploads/plant-png-42.png',
+    'https://www.freeiconspng.com/uploads/plant-png-44.png',
+    'https://www.freeiconspng.com/uploads/plant-png-46.png'
+  ];
 
-  <script>
-    let selected = null;
-    let simulator = document.getElementById('simulator');
-    let message = document.getElementById('message');
+  const plantPalette = document.getElementById('plantPalette');
 
-    simulator.addEventListener('mousedown', function (e) {
-      if (e.target.classList.contains('plant')) {
-        selected = e.target;
-      }
-    });
+  plantImages.forEach((src, index) => {
+    const img = document.createElement('img');
+    img.src = src;
+    img.classList.add('plant');
+    img.draggable = true;
+    img.id = 'plant' + index;
+    img.ondragstart = drag;
+    plantPalette.appendChild(img);
+  });
 
-    simulator.addEventListener('mousemove', function (e) {
-      if (selected) {
-        selected.style.left = e.offsetX - 35 + 'px';
-        selected.style.top = e.offsetY - 35 + 'px';
-      }
-    });
+  function allowDrop(ev) {
+    ev.preventDefault();
+  }
 
-    document.addEventListener('mouseup', function () {
-      selected = null;
-    });
+  function drag(ev) {
+    ev.dataTransfer.setData('text', ev.target.id);
+  }
 
-    function addPlant(src) {
-      const plant = document.createElement('img');
-      plant.src = src;
-      plant.classList.add('plant');
-      plant.style.top = '50px';
-      plant.style.left = '50px';
-      plant.onclick = () => {
-        message.textContent = "✅ Plante ajoutée au panier.";
-        setTimeout(() => message.textContent = '', 2000);
-      };
-      simulator.appendChild(plant);
-    }
+  function drop(ev) {
+    ev.preventDefault();
+    const data = ev.dataTransfer.getData('text');
+    const plant = document.getElementById(data).cloneNode(true);
+    plant.style.position = 'absolute';
+    plant.style.left = (ev.clientX - ev.target.offsetLeft - plant.width / 2) + 'px';
+    plant.style.top = (ev.clientY - ev.target.offsetTop - plant.height / 2) + 'px';
+    plant.draggable = false;
+    ev.target.appendChild(plant);
+  }
 
-    document.getElementById('imageUpload').addEventListener('change', function (e) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = function (event) {
-        document.getElementById('background').src = event.target.result;
-      };
-      reader.readAsDataURL(file);
-    });
+  document.getElementById('backgroundInput').addEventListener('change', function(event) {
+    const file = event.target.files[0];
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      document.getElementById('garden').style.backgroundImage = 'url(' + e.target.result + ')';
+    };
+    reader.readAsDataURL(file);
+  });
 
-    function saveAsImage() {
-      html2canvas(simulator).then(canvas => {
-        const link = document.createElement('a');
-        link.download = 'mon-jardin.png';
-        link.href = canvas.toDataURL();
-        link.click();
-      });
-    }
-  </script>
+  function saveGarden() {
+    alert('Fonction de sauvegarde à implémenter.');
+    // Ici, vous pouvez implémenter la fonctionnalité pour sauvegarder la composition
+  }
+</script>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </body>
 </html>
